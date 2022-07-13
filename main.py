@@ -25,25 +25,29 @@ async def cmd_test1(message: types.Message):
 @dp.message_handler(content_types=types.ContentTypes.DOCUMENT)
 async def download_doc(message: types.Message):
     if message.document.file_name.split('.')[-1] == 'pdf':
-        await message.answer('Converting..')
-        #Saving the file
-        await message.document.download(
-        destination_file=f'{work_dir}//file.pdf',
-        )
-        #We go through the text and write everything in one line
-        with pdfplumber.PDF(open(file=f'{work_dir}//file.pdf', mode='rb')) as pdf:
-            pages = [page.extract_text() for page in pdf.pages]
-        text = ''.join(pages)
-        #Remove line breaks so that there are no pauses in reading
-        text = text.replace('\n','')
-        audio = gTTS(text=text, lang='ru', slow=False)
-        audio.save(f'{work_dir}//file.mp3')
-        await bot.send_audio(message.from_user.id, open(f'{work_dir}//file.mp3','rb'), title = 'Have a nice day!')
-        #Loop to delete the files we created
-        for root, dirs, files in os.walk(work_dir):
-            for file in files:
-                if Path(file).suffix in ('.pdf','.mp3'):
-                    os.remove(file)
+        if message.document.file_size<=1500000:
+            await message.answer('Converting..')
+            #Saving the file
+            await message.document.download(
+            destination_file=f'{work_dir}//file.pdf',
+            )
+            #We go through the text and write everything in one line
+            with pdfplumber.PDF(open(file=f'{work_dir}//file.pdf', mode='rb')) as pdf:
+                pages = [page.extract_text() for page in pdf.pages[0:3]]
+            text = ''.join(pages)
+            #Remove line breaks so that there are no pauses in reading
+            text = text.replace('\n','')
+            audio = gTTS(text=text, lang='ru', slow=False)
+            await message.answer('Sound recording...')
+            audio.save(f'{work_dir}//file.mp3')
+            await bot.send_audio(message.from_user.id, open(f'{work_dir}//file.mp3','rb'), title = 'Have a nice day!')
+            #Loop to delete the files we created
+            for root, dirs, files in os.walk(work_dir):
+                for file in files:
+                    if Path(file).suffix in ('.pdf','.mp3'):
+                        os.remove(file)
+        else:
+            await message.answer('Sorry, but I can only work with files no larger than 1.5mb') 
     else:
         await message.answer('Sorry, but I only work with .pdf')
 
